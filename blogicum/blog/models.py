@@ -86,6 +86,11 @@ class Post(BaseModel):
         null=True,
         verbose_name='Категория'
     )
+    image = models.ImageField(
+        verbose_name='Фото',
+        blank=True,
+        upload_to='post_images'
+    )
 
     class Meta:
         verbose_name = 'публикация'
