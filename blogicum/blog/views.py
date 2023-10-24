@@ -1,8 +1,11 @@
+from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, render
+from django.views.generic import DeleteView, DetailView, ListView
 from django.utils.timezone import now
 
-from .models import Category, Post
+from .models import Category, Post, User
 
 
 def create_post_request():
@@ -43,4 +46,13 @@ def category_posts(request, category_slug):
     )
     posts = create_post_request().filter(category=category)
     context = {'category': category, 'post_list': posts}
+    return render(request, template, context)
+
+
+# Страница пользователя
+def profile(request, username):
+    template = 'blog/profile.html'
+    profile = get_object_or_404(User, username=username)
+    context = {'profile': profile}
+
     return render(request, template, context)

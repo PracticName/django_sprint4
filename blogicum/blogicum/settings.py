@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'blog.apps.BlogConfig',
     'pages.apps.PagesConfig',
     'core.apps.CoreConfig',
+    'django_bootstrap5',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -147,3 +148,6 @@ SHORT_NAME = 30
 POST_QUANTITY = 5
 
 CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
+
+LOGIN_REDIRECT_URL = 'blog:index'
+LOGIN_URL = 'login'

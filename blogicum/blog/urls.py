@@ -11,5 +11,10 @@ urlpatterns = [
         views.category_posts,
         name='category_posts'
     ),
+    path(
+        'auth/<username>/',
+        views.profile,
+        name='profile'
+    ),
     path('', views.index, name='index'),
 ]
