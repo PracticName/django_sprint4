@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.urls import reverse
 
 User = get_user_model()
 
@@ -98,12 +99,15 @@ class Post(BaseModel):
         ordering = ('-pub_date',)
         default_related_name = 'posts'
 
+    def get_absolute_url(self):
+        return reverse('blog:post_detail', kwargs={'post_id': self.pk})
+
     def __str__(self):
         return self.title[:settings.SHORT_NAME]
 
 
 class Comment(BaseModel):
-    comment = models.TextField(verbose_name='Комментрарий')
+    comment = models.TextField(verbose_name='Комментрарий', max_length=256)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(
         Post,
@@ -113,3 +117,7 @@ class Comment(BaseModel):
 
     class Meta:
         ordering = ('created_at',)
+
+
+'''def get_absolute_url(self):
+        return reverse('blog:post_detail', kwargs={'post_id': self.pk})'''

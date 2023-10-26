@@ -1,20 +1,20 @@
 from django.urls import path
 
 from blog import views
-from . views import PostDetailView
+from . views import PostDetailView, PostDeleteView, PostCreateView, PostUpdateView, PostListView
 
 
 app_name = 'blog'
 
 urlpatterns = [
     path(
-        'posts/<int:id>/',
+        'posts/<int:post_id>/',
         PostDetailView.as_view(),
         name='post_detail'
     ),
     path(
         'posts/<int:post_id>/delete/',
-        views.delete_post,
+        PostDeleteView.as_view(),
         name='delete_post'
     ),
     path(
@@ -24,7 +24,7 @@ urlpatterns = [
     ),
     path(
         'posts/<int:post_id>/edit/',
-        views.create_post,
+        PostUpdateView.as_view(),
         name='edit_post'
     ),
     path(
@@ -39,7 +39,7 @@ urlpatterns = [
     ),
     path(
         'posts/create/',
-        views.create_post,
+        PostCreateView.as_view(),
         name='create_post'
     ),
     path(
@@ -59,5 +59,5 @@ urlpatterns = [
         name='edit_profile'
     ),
 
-    path('', views.index, name='index'),
+    path('', PostListView.as_view(), name='index'),
 ]

@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+from django.http.response import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import DeleteView, DetailView, ListView, CreateView, UpdateView
 from django.urls import reverse_lazy
@@ -9,20 +11,6 @@ from django.utils.timezone import now
 from . forms import PostForm, CustomUserCreationForm, CommentForm
 
 from .models import Category, Post, User, Comment
-
-
-'''class PostCreateView(LoginRequiredMixin, CreateView):
-    model = Post
-    form_class = PostForm
-    template_name = 'blog/create.html'
-    success_url = reverse_lazy('blog:profile')
-
-
-class PostUpdateView(UpdateView):
-    model = Post
-    form_class = PostForm
-    template_name = 'blog/create.html'
-    success_url = reverse_lazy('blog:post_detail')'''
 
 
 def create_post_request():
@@ -37,7 +25,7 @@ def create_post_request():
     )
 
 
-@login_required
+'''@login_required
 def create_post(request, post_id=None):
     template = 'blog/create.html'
     if post_id is not None:
@@ -54,17 +42,55 @@ def create_post(request, post_id=None):
         form_obj.author = request.user
         form.save()
         return redirect('blog:profile')
-    return render(request, template, context)
+    return render(request, template, context)'''
 
 
-def index(request):
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create.html'
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+
+class PostUpdateView(LoginRequiredMixin, UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create.html'
+    pk_url_kwarg = 'post_id'
+
+    def dispatch(self, request, *args, **kwargs):
+        get_object_or_404(Post, pk=kwargs['post_id'], author=request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+
+class PostDeleteView(LoginRequiredMixin, DeleteView):
+    model = Post
+    template_name = 'blog/create.html'
+    success_url = reverse_lazy('blog:index')
+    pk_url_kwarg = 'post_id'
+
+    def dispatch(self, request, *args, **kwargs):
+        get_object_or_404(Post, pk=kwargs['post_id'], author=request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+
+'''def index(request):
     template = 'blog/index.html'
     posts = create_post_request()
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {'page_obj': page_obj}
-    return render(request, template, context)
+    return render(request, template, context)'''
+
+
+class PostListView(ListView):
+    model = Post
+    paginate_by = settings.POSTS_NUMBER
+    template_name = 'blog/index.html'
 
 
 class PostDetailView(DetailView):
@@ -89,7 +115,7 @@ def category_posts(request, category_slug):
         slug=category_slug
     )
     posts = create_post_request().filter(category=category)
-    paginator = Paginator(posts, 10)
+    paginator = Paginator(posts, settings.POSTS_NUMBER)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {'category': category, 'post_list': posts, 'page_obj': page_obj}
@@ -139,7 +165,7 @@ def add_comment(request, post_id, comment_id=None):
     return redirect('blog:post_detail', post_id)
 
 
-@login_required
+'''@login_required
 def delete_post(request, post_id):
     instance = get_object_or_404(Post, pk=post_id)
     form = PostForm(instance=instance)
@@ -147,7 +173,7 @@ def delete_post(request, post_id):
     if request.method == 'POST':
         instance.delete()
         return redirect('blog:profile')
-    return render(request, 'blog/create.html', context)
+    return render(request, 'blog/create.html', context)'''
 
 
 @login_required
