@@ -100,3 +100,16 @@ class Post(BaseModel):
 
     def __str__(self):
         return self.title[:settings.SHORT_NAME]
+
+
+class Comment(BaseModel):
+    comment = models.TextField(verbose_name='Комментрарий')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+
+    class Meta:
+        ordering = ('created_at',)

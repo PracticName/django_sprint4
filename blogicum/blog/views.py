@@ -1,17 +1,14 @@
-from typing import Any
-from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import DeleteView, DetailView, ListView, CreateView, UpdateView
 from django.urls import reverse_lazy
 from django.utils.timezone import now
-from django.contrib.auth.forms import UserCreationForm
-from . forms import PostForm, CustomUserCreationForm
+#  from django.contrib.auth.forms import UserCreationForm
+from . forms import PostForm, CustomUserCreationForm, CommentForm
 
-from .models import Category, Post, User
+from .models import Category, Post, User, Comment
 
 
 '''class PostCreateView(LoginRequiredMixin, CreateView):
@@ -28,7 +25,7 @@ class PostUpdateView(UpdateView):
     success_url = reverse_lazy('blog:post_detail')'''
 
 
-def create_post_request():    
+def create_post_request():
     return Post.objects.select_related(
         'location',
         'author',
@@ -44,13 +41,19 @@ def create_post_request():
 def create_post(request, post_id=None):
     template = 'blog/create.html'
     if post_id is not None:
-        instance = get_object_or_404(Post, pk=post_id)
+        instance = get_object_or_404(Post, pk=post_id, author=request.user)
     else:
         instance = None
-    form = PostForm(request.POST or None, files=request.FILES or None, instance=instance)
+    form = PostForm(
+        request.POST or None,
+        files=request.FILES or None,
+        instance=instance)
     context = {'form': form}
     if form.is_valid():
+        form_obj = form.save(commit=False)
+        form_obj.author = request.user
         form.save()
+        return redirect('blog:profile')
     return render(request, template, context)
 
 
@@ -64,14 +67,18 @@ def index(request):
     return render(request, template, context)
 
 
-def post_detail(request, id):
-    template = 'blog/detail.html'
-    post = get_object_or_404(
-        create_post_request(),
-        pk=id
-    )
-    context = {'post': post}
-    return render(request, template, context)
+class PostDetailView(DetailView):
+    model = Post
+    template_name = 'blog/detail.html'
+    pk_url_kwarg = 'id'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['form'] = CommentForm()
+        context['comments'] = self.object.comments.select_related('user')
+
+        return context
 
 
 def category_posts(request, category_slug):
@@ -111,3 +118,44 @@ def edit_profile(request, username):
     if form.is_valid():
         form.save()
     return render(request, template, context)
+
+
+@login_required
+def add_comment(request, post_id, comment_id=None):
+    if comment_id is not None:
+        instance = get_object_or_404(
+            Post,
+            pk=post_id,
+            author=request.user
+        )
+    else:
+        instance = None
+    form = CommentForm(request.POST or None, instance=instance)
+    if form.is_valid():
+        form_obj = form.save(commit=False)
+        form_obj.user = request.user
+        form_obj.post = instance
+        form_obj.save()
+    return redirect('blog:post_detail', post_id)
+
+
+@login_required
+def delete_post(request, post_id):
+    instance = get_object_or_404(Post, pk=post_id)
+    form = PostForm(instance=instance)
+    context = {'form': form}
+    if request.method == 'POST':
+        instance.delete()
+        return redirect('blog:profile')
+    return render(request, 'blog/create.html', context)
+
+
+@login_required
+def delete_comment(request, post_id, comment_id):
+    instance = get_object_or_404(Comment, pk=comment_id)
+    form = CommentForm(instance=instance)
+    context = {'form': form}
+    if request.method == 'POST':
+        instance.delete()
+        return redirect('blog:profile')
+    return render(request, 'blog/comment.html', context)
