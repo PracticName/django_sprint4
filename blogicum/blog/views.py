@@ -5,7 +5,7 @@ from django.core.paginator import Paginator
 from django.http.response import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import DeleteView, DetailView, ListView, CreateView, UpdateView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.utils.timezone import now
 #  from django.contrib.auth.forms import UserCreationForm
 from . forms import PostForm, CustomUserCreationForm, CommentForm
@@ -77,34 +77,66 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
         return super().dispatch(request, *args, **kwargs)
 
 
-'''def index(request):
-    template = 'blog/index.html'
-    posts = create_post_request()
-    paginator = Paginator(posts, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    context = {'page_obj': page_obj}
-    return render(request, template, context)'''
-
-
 class PostListView(ListView):
     model = Post
     paginate_by = settings.POSTS_NUMBER
     template_name = 'blog/index.html'
+    queryset = create_post_request()
+    context_object_name = 'post'
 
 
 class PostDetailView(DetailView):
     model = Post
     template_name = 'blog/detail.html'
-    pk_url_kwarg = 'id'
+    pk_url_kwarg = 'post_id'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         context['form'] = CommentForm()
-        context['comments'] = self.object.comments.select_related('user')
+        context['comments'] = self.object.comments.select_related('author')
 
         return context
+
+
+class CommentCreateView(LoginRequiredMixin, CreateView):
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/comment.html'
+    pk_url_kwarg = 'post_id'
+    context_object_name = 'comments'
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        # form.instance.post = get_object_or_404(create_post_request(), pk=self.obj)
+        return super().form_valid(form)
+
+
+class CommentUpdateView(LoginRequiredMixin, UpdateView):
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/comment.html'
+    pk_url_kwarg = 'comment_id'
+    context_object_name = 'comment'
+
+    def dispatch(self, request, *args, **kwargs):
+        get_object_or_404(Comment, pk=kwargs['comment_id'], author=request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+
+class CommentDeleteView(LoginRequiredMixin, DeleteView):
+    model = Comment
+    template_name = 'blog/comment.html'
+    context_object_name = 'comment'
+    pk_url_kwarg = 'comment_id'
+
+    def dispatch(self, request, *args, **kwargs):
+        get_object_or_404(Comment, pk=kwargs['comment_id'], author=request.user)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        post_id = self.kwargs['post_id']
+        return reverse('blog:post_detail', kwargs={'post_id': post_id})
 
 
 def category_posts(request, category_slug):
@@ -146,23 +178,19 @@ def edit_profile(request, username):
     return render(request, template, context)
 
 
-@login_required
+'''@login_required
 def add_comment(request, post_id, comment_id=None):
-    if comment_id is not None:
-        instance = get_object_or_404(
-            Post,
-            pk=post_id,
-            author=request.user
-        )
-    else:
-        instance = None
-    form = CommentForm(request.POST or None, instance=instance)
+    instance = get_object_or_404(
+        create_post_request(),
+        pk=post_id
+    )
+    form = CommentForm(request.POST)
     if form.is_valid():
-        form_obj = form.save(commit=False)
-        form_obj.user = request.user
-        form_obj.post = instance
-        form_obj.save()
-    return redirect('blog:post_detail', post_id)
+        comments = form.save(commit=False)
+        comments.author = request.user
+        comments.post = instance
+        comments.save()
+    return redirect('blog:post_detail', post_id)'''
 
 
 '''@login_required
@@ -176,7 +204,7 @@ def delete_post(request, post_id):
     return render(request, 'blog/create.html', context)'''
 
 
-@login_required
+'''@login_required
 def delete_comment(request, post_id, comment_id):
     instance = get_object_or_404(Comment, pk=comment_id)
     form = CommentForm(instance=instance)
@@ -184,4 +212,4 @@ def delete_comment(request, post_id, comment_id):
     if request.method == 'POST':
         instance.delete()
         return redirect('blog:profile')
-    return render(request, 'blog/comment.html', context)
+    return render(request, 'blog/comment.html', context)'''

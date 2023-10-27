@@ -107,8 +107,8 @@ class Post(BaseModel):
 
 
 class Comment(BaseModel):
-    comment = models.TextField(verbose_name='Комментрарий', max_length=256)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField(verbose_name='Комментрарий', max_length=256)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
@@ -118,6 +118,8 @@ class Comment(BaseModel):
     class Meta:
         ordering = ('created_at',)
 
+    def get_absolute_url(self):
+        return reverse('blog:post_detail', kwargs={'post_id': self.post.pk})
 
-'''def get_absolute_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.pk})'''
+    def __str__(self):
+        return self.comment[:settings.SHORT_NAME]
