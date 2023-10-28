@@ -72,7 +72,8 @@ class Post(BaseModel):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор публикации'
+        verbose_name='Автор публикации',
+        null=True
     )
     location = models.ForeignKey(
         Location,
@@ -100,7 +101,7 @@ class Post(BaseModel):
         default_related_name = 'posts'
 
     def get_absolute_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.pk})
+        return reverse('blog:profile', kwargs={'username': self.author})
 
     def __str__(self):
         return self.title[:settings.SHORT_NAME]
@@ -119,7 +120,7 @@ class Comment(BaseModel):
         ordering = ('created_at',)
 
     def get_absolute_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.post.pk})
+        return reverse('blog:post_detail', kwargs={'post_id': self.post})
 
     def __str__(self):
-        return self.comment[:settings.SHORT_NAME]
+        return self.text[:settings.SHORT_NAME]

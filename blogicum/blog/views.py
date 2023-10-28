@@ -69,12 +69,14 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
 class PostDeleteView(LoginRequiredMixin, DeleteView):
     model = Post
     template_name = 'blog/create.html'
-    success_url = reverse_lazy('blog:index')
     pk_url_kwarg = 'post_id'
 
     def dispatch(self, request, *args, **kwargs):
         get_object_or_404(Post, pk=kwargs['post_id'], author=request.user)
         return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('blog:profile', kwargs={'username': self.object.author})
 
 
 class PostListView(ListView):
@@ -84,6 +86,11 @@ class PostListView(ListView):
     queryset = create_post_request()
     context_object_name = 'post'
 
+    '''def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['comment_count'] = Comment.objects.count()
+        return context'''
+
 
 class PostDetailView(DetailView):
     model = Post
@@ -92,7 +99,6 @@ class PostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         context['form'] = CommentForm()
         context['comments'] = self.object.comments.select_related('author')
 
@@ -102,14 +108,16 @@ class PostDetailView(DetailView):
 class CommentCreateView(LoginRequiredMixin, CreateView):
     model = Comment
     form_class = CommentForm
-    template_name = 'blog/comment.html'
-    pk_url_kwarg = 'post_id'
-    context_object_name = 'comments'
+    template_name = 'blog/detail.html'
 
     def form_valid(self, form):
         form.instance.author = self.request.user
-        # form.instance.post = get_object_or_404(create_post_request(), pk=self.obj)
+        form.instance.post = get_object_or_404(Post, pk=self.kwargs['post_id'])
         return super().form_valid(form)
+
+    def get_success_url(self) -> str:
+        post_id = self.kwargs['post_id']
+        return reverse('blog:post_detail', kwargs={'post_id': post_id})
 
 
 class CommentUpdateView(LoginRequiredMixin, UpdateView):
