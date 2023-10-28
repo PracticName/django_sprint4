@@ -1,7 +1,9 @@
+from typing import Any
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+from django.db.models.query import QuerySet
 from django.http.response import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import DeleteView, DetailView, ListView, CreateView, UpdateView
@@ -62,7 +64,9 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     pk_url_kwarg = 'post_id'
 
     def dispatch(self, request, *args, **kwargs):
-        get_object_or_404(Post, pk=kwargs['post_id'], author=request.user)
+        obj = self.get_object()
+        if obj.author != self.request.user:
+            return redirect('blog:post_detail', self.kwargs['post_id'])
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -162,8 +166,7 @@ def category_posts(request, category_slug):
     return render(request, template, context)
 
 
-# Страница пользователя
-def profile(request, username):
+'''def profile(request, username):
     template = 'blog/profile.html'
     profile = get_object_or_404(User, username=username)
     posts = create_post_request().filter(author=profile.pk)
@@ -172,10 +175,43 @@ def profile(request, username):
     page_obj = paginator.get_page(page_number)
     context = {'profile': profile, 'page_obj': page_obj}
 
-    return render(request, template, context)
+    return render(request, template, context)'''
 
 
-@login_required
+class ProfileListView(ListView):
+    model = Post
+    template_name = 'blog/profile.html'
+    paginate_by = 10
+    ordering = '-id'
+    slug_url_kwarg = 'username'
+    slug_field = 'username'
+
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(
+            author__username=self.kwargs['username']
+        ).order_by('-pub_date')
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        profile = get_object_or_404(User, username=self.kwargs['username'])
+        context['profile'] = profile
+        return context
+
+
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = User
+    form_class = CustomUserCreationForm
+    template_name = 'blog/user.html'
+    slug_url_kwarg = 'username'
+    slug_field = 'username'
+    reverse_lazy('blog:index')
+
+#    def get_success_url(self):
+#        return reverse('blog:profile', kwargs={'username': self.kwargs['username']})
+
+
+'''@login_required
 def edit_profile(request, username):
     template = 'blog/user.html'
     instance = get_object_or_404(User, username=username)
@@ -183,7 +219,7 @@ def edit_profile(request, username):
     context = {'form': form}
     if form.is_valid():
         form.save()
-    return render(request, template, context)
+    return render(request, template, context)'''
 
 
 '''@login_required
