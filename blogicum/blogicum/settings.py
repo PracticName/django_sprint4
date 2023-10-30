@@ -36,7 +36,7 @@ ALLOWED_HOSTS = [
 INSTALLED_APPS = [
     'django_bootstrap5',
     'blog.apps.BlogConfig',
-    'pages.apps.PagesConfig',    
+    'pages.apps.PagesConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

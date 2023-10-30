@@ -1,8 +1,10 @@
+from blog import views
 from django.urls import path
 
-from blog import views
-from . views import PostDetailView, PostDeleteView, PostCreateView, PostUpdateView, PostListView, CommentUpdateView, CommentDeleteView, CommentCreateView, ProfileListView, ProfileUpdateView
-
+from .views import (CommentCreateView, CommentDeleteView, CommentUpdateView,
+                    PostCreateView, PostDeleteView, PostDetailView,
+                    PostListView, PostUpdateView, ProfileDetailView,
+                    ProfileUpdateView)
 
 app_name = 'blog'
 
@@ -49,15 +51,14 @@ urlpatterns = [
     ),
     #  страница полььзователя
     path(
-        'profile/<slug:username>/',
-        ProfileListView.as_view(),
-        name='profile'
-    ),
-    path(
-        'profile/<slug:username>/edit/',
+        'profile/edit/',
         ProfileUpdateView.as_view(),
         name='edit_profile'
     ),
-
+    path(
+        'profile/<slug:username>/',
+        ProfileDetailView.as_view(),
+        name='profile'
+    ),
     path('', PostListView.as_view(), name='index'),
 ]
