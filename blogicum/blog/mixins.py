@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 
-from . models import Post, Comment
+from .models import Comment, Post
 
 
 class PostMixin:

@@ -9,8 +9,8 @@ from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
                                   UpdateView)
 
 from .forms import CommentForm, EditRegistrationForm, PostForm
-from .mixins import (PostMixin, PostDispatchmixin,
-                     CommentMixin, CommentDispathMixin)
+from .mixins import (CommentDispathMixin, CommentMixin, PostDispatchmixin,
+                     PostMixin)
 from .models import Category, Post, User
 
 
