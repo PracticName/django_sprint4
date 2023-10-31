@@ -5,6 +5,7 @@ from .models import Category, Location, Post
 admin.site.empty_value_display = 'Не задано'
 
 
+@admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = (
         'title',
@@ -22,6 +23,7 @@ class PostAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = (
         'title',
@@ -36,6 +38,7 @@ class CategoryAdmin(admin.ModelAdmin):
         'title',)
 
 
+@admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -44,8 +47,3 @@ class LocationAdmin(admin.ModelAdmin):
     list_editable = (
         'is_published',
     )
-
-
-admin.site.register(Category, CategoryAdmin)
-admin.site.register(Location, LocationAdmin)
-admin.site.register(Post, PostAdmin)

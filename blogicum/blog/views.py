@@ -2,14 +2,16 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils.timezone import now
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
                                   UpdateView)
 
 from .forms import CommentForm, EditRegistrationForm, PostForm
-from .models import Category, Comment, Post, User
+from .mixins import (PostMixin, PostDispatchmixin,
+                     CommentMixin, CommentDispathMixin)
+from .models import Category, Post, User
 
 
 def create_post_request():
@@ -28,21 +30,6 @@ def get_paginator(request, posts, posts_number):
     paginator = Paginator(posts, posts_number)
     page_number = request.GET.get('page')
     return paginator.get_page(page_number)
-
-
-class PostMixin:
-    model = Post
-    template_name = 'blog/create.html'
-
-
-class PostDispatchmixin:
-    pk_url_kwarg = 'post_id'
-
-    def dispatch(self, request, *args, **kwargs):
-        obj = self.get_object()
-        if obj.author != self.request.user:
-            return redirect('blog:post_detail', self.kwargs['post_id'])
-        return super().dispatch(request, *args, **kwargs)
 
 
 class PostCreateView(LoginRequiredMixin, PostMixin, CreateView):
@@ -75,10 +62,9 @@ class PostListView(ListView):
     model = Post
     paginate_by = settings.POSTS_NUMBER
     template_name = 'blog/index.html'
-    queryset = create_post_request()
 
     def get_queryset(self):
-        queryset = super().get_queryset().annotate(
+        queryset = create_post_request().annotate(
             comment_count=Count('comments')
         ).order_by('-pub_date')
         return queryset
@@ -109,26 +95,6 @@ class PostDetailView(DetailView):
         context['form'] = CommentForm()
         context['comments'] = self.object.comments.select_related('author')
         return context
-
-
-class CommentMixin:
-    model = Comment
-    context_object_name = 'comment'
-
-    def get_success_url(self):
-        post_id = self.kwargs['post_id']
-        return reverse('blog:post_detail', kwargs={'post_id': post_id})
-
-
-class CommentDispathMixin:
-    template_name = 'blog/comment.html'
-    pk_url_kwarg = 'comment_id'
-
-    def dispatch(self, request, *args, **kwargs):
-        get_object_or_404(
-            Comment, pk=kwargs['comment_id'], author=request.user.pk
-        )
-        return super().dispatch(request, *args, **kwargs)
 
 
 class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):
