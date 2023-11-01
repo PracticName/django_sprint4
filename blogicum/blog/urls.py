@@ -1,7 +1,6 @@
-from blog import views
-
 from django.urls import path
 
+from blog import views
 from .views import (CommentCreateView, CommentDeleteView, CommentUpdateView,
                     PostCreateView, PostDeleteView, PostDetailView,
                     PostListView, PostUpdateView, ProfileDetailView,
